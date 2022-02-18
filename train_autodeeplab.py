@@ -1,4 +1,6 @@
 import os
+import time
+
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
@@ -334,4 +336,7 @@ def main():
     trainer.writer.close()
 
 if __name__ == "__main__":
-   main()
+    start_t = time.perf_counter()
+    main()
+    elapsed_time = time.perf_counter() - start_t
+    print(elapsed_time/60/60)
