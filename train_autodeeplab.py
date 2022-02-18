@@ -3,6 +3,8 @@ import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
 from collections import OrderedDict
+
+from dataloaders.datasets.hsi_dataset import get_training_dataloaders
 from mypath import Path
 from dataloaders import make_data_loader
 from modeling.sync_batchnorm.replicate import patch_replication_callback
@@ -44,7 +46,8 @@ class Trainer(object):
         self.opt_level = args.opt_level
 
         kwargs = {'num_workers': args.workers, 'pin_memory': True, 'drop_last':True}
-        self.train_loaderA, self.train_loaderB, self.val_loader, self.test_loader, self.nclass = make_data_loader(args, **kwargs)
+        self.train_loaderA, self.train_loaderB, self.val_loader = get_training_dataloaders(args.batch_size, args.workers, '/projects/datasets/UOW-HSI-v2')
+        self.nclass=5
 
         if args.use_balanced_weights:
             classes_weights_path = os.path.join(Path.db_root_dir(args.dataset), args.dataset+'_classes_weights.npy')
@@ -60,7 +63,7 @@ class Trainer(object):
         self.criterion = SegmentationLosses(weight=weight, cuda=args.cuda).build_loss(mode=args.loss_type)
 
         # Define network
-        model = AutoDeeplab (self.nclass, 12, self.criterion, self.args.filter_multiplier,
+        model = AutoDeeplab (self.nclass, 10, self.criterion, self.args.filter_multiplier,
                              self.args.block_multiplier, self.args.step)
         optimizer = torch.optim.SGD(
                 model.weight_parameters(),
@@ -172,6 +175,8 @@ class Trainer(object):
         num_img_tr = len(self.train_loaderA)
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['label']
+            if len(image) <= 1:  # skip batches that are not more than 1
+                continue
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
@@ -206,9 +211,9 @@ class Trainer(object):
             #self.writer.add_scalar('train/total_loss_iter', loss.item(), i + num_img_tr * epoch)
 
             # Show 10 * 3 inference results each epoch
-            if i % (num_img_tr // 10) == 0:
-                global_step = i + num_img_tr * epoch
-                self.summary.visualize_image(self.writer, self.args.dataset, image, target, output, global_step)
+            # if i % (num_img_tr // 10) == 0:
+            #     global_step = i + num_img_tr * epoch
+                # self.summary.visualize_image(self.writer, self.args.dataset, image, target, output, global_step)
 
             #torch.cuda.empty_cache()
         self.writer.add_scalar('train/total_loss_epoch', train_loss, epoch)
