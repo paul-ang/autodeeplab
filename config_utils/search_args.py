@@ -22,6 +22,7 @@ def obtain_search_args():
     parser.add_argument('--clean-module', type=int, default=0)
     parser.add_argument('--workers', type=int, default=0,
                         metavar='N', help='dataloader threads')
+    parser.add_argument('--fold', type=int, default=1)
     parser.add_argument('--base_size', type=int, default=320,
                         help='base image size')
     parser.add_argument('--crop_size', type=int, default=321,

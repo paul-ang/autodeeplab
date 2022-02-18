@@ -48,7 +48,7 @@ class Trainer(object):
         self.opt_level = args.opt_level
 
         kwargs = {'num_workers': args.workers, 'pin_memory': True, 'drop_last':True}
-        self.train_loaderA, self.train_loaderB, self.val_loader = get_training_dataloaders(args.batch_size, args.workers, '/projects/datasets/UOW-HSI-v2')
+        self.train_loaderA, self.train_loaderB, self.val_loader = get_training_dataloaders(args.batch_size, args.workers, '/projects/datasets/UOW-HSI-v2', fold=args.fold)
         self.nclass=5
 
         if args.use_balanced_weights:
